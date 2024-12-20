@@ -6,19 +6,19 @@ plugins {
 group = "org.sinou.android.kotlin"
 version = "0.1.1-dev"
 
-spotless {
-    //check(false)
-
-    format("misc") {
-        target(".gitignore")
-        trimTrailingWhitespace()
-        indentWithSpaces() // Default is 4, change by providing an integer
-        endWithNewline()
-    }
-    kotlin {
-        ktfmt()
-    }
-}
+//spotless {
+//    //check(false)
+//
+//    format("misc") {
+//        target(".gitignore")
+//        trimTrailingWhitespace()
+//        indentWithSpaces() // Default is 4, change by providing an integer
+//        endWithNewline()
+//    }
+//    kotlin {
+//        ktfmt()
+//    }
+//}
 
 tasks.test {
     useJUnitPlatform()

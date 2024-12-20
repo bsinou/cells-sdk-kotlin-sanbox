@@ -1,56 +1,112 @@
 package org.sinou.kotlin.android.sampleapp
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.get
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
-import org.sinou.android.kotlin.openapi.api.NodeServiceApi
-import org.sinou.android.kotlin.openapi.model.RestCreateRequest
-import org.sinou.android.kotlin.openapi.model.RestIncomingNode
-import org.sinou.android.kotlin.openapi.model.RestLookupRequest
-import org.sinou.android.kotlin.openapi.model.RestNodeLocator
-import org.sinou.android.kotlin.openapi.model.RestNodeLocators
+import okhttp3.Request
 import java.security.cert.X509Certificate
 import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-private const val SERVER_URL = "https://localhost:8080/"
+const val SERVER_URL = "https://localhost:8080"
 private const val SKIP_SSL_VERIFICATION = true
 private const val USER_AGENT = "org.sinou.kotlin.android.sampleapp/v0.1.1 CellsAPI/v2"
 private const val PAT =
-    "lh1-etwWlkVUtejao-XrWvgtS0FyAi_fRo2gEmWn77w.QMrtx4oejSiDj0dI2oskUI2lAT6IlF2epcpT1Ys326A"
+    "0XmNa4mhWfLhURwFP6_XJVuEDgPDnoa8EKvJB55fY8g.yddonfgcR4oogCzRqIfimzN7dRNk7si3X3TFRL7hYjo"
+
+private val trustAllCerts = UnsecureTrustManager()
+
+private val unsafeSslContext by lazy {
+    SSLContext.getInstance("TLS").apply {
+        init(null, arrayOf<TrustManager>(trustAllCerts), java.security.SecureRandom())
+    }
+}
+
+@OptIn(ExperimentalSerializationApi::class)
+val jsonInstance = Json {
+    ignoreUnknownKeys = true
+    isLenient = true
+    encodeDefaults = true
+    coerceInputValues = false
+    explicitNulls = false
+}
+
+private val myHttpClient = HttpClient(OkHttp) {
+    Log.e("myHttpClient", "---- Constructing the client")
+    install(ContentNegotiation) {
+        json(jsonInstance)
+    }
+
+    engine {
+        preconfigured = OkHttpClient.Builder()
+            .sslSocketFactory(unsafeSslContext.socketFactory, trustAllCerts)
+            .hostnameVerifier { _, _ -> true }
+            .addInterceptor(DummyPatInterceptor(USER_AGENT) { PAT })
+            .build()
+    }
+}
+
+//val myServiceApi = NodeServiceApi("$SERVER_URL/a", myHttpClient.engine)
 
 class NodeService(
     private val appContext: Context,
 ) {
-    val client = getHttpClient()
+//     val client = getHttpClient()
 
-    fun nodeServiceApi(): NodeServiceApi {
-        return NodeServiceApi(getApiURL(), client.engine)
-    }
+//    fun nodeServiceApi(): NodeServiceApi {
+//        return NodeServiceApi(getApiURL(), myHttpClient.engine)
+//    }
 
     suspend fun createDummyFile(): Int {
-        val response = nodeServiceApi().create(
-            RestCreateRequest(
-                listOf(
-                    RestIncomingNode(
-                        locator = RestNodeLocator(path = "common-files/test.txt")
-                    )
-                )
-            )
-        )
-        val response2 = nodeServiceApi().lookup(
-            RestLookupRequest(
-                locators = RestNodeLocators(
-                    many = listOf(
-                        RestNodeLocator(
-                            path = "common-files/*"
-                        )
-                    )
-                )
-            )
-        )
-        return response.status
+
+        try {
+            val myReq = Request.Builder().url(SERVER_URL)
+            Log.i("CreateDummy", "We have a request: $myReq")
+
+            val response = myHttpClient.get { myReq }
+        } catch (e: Exception) {
+            Log.e("CreateDummy", "Even a get causes: ${e.message}")
+            e.printStackTrace()
+        }
+
+//        Log.i("CreateDummy", "Before calling create")
+//        try {
+//            val response = myServiceApi.create(
+//                RestCreateRequest(
+//                    listOf(
+//                        RestIncomingNode(
+//                            locator = RestNodeLocator(path = "common-files/test.txt")
+//                        )
+//                    )
+//                )
+//            )
+//        } catch (e: Exception) {
+//            Log.e("CreateDummy", "Et blöaaaa")
+//        }
+//        Log.e("CreateDummy", "After calling create")
+//
+//        val response2 = nodeServiceApi().lookup(
+//            RestLookupRequest(
+//                locators = RestNodeLocators(
+//                    many = listOf(
+//                        RestNodeLocator(
+//                            path = "common-files/*"
+//                        )
+//                    )
+//                )
+//            )
+//        )
+//        return response2.status
+        return 200
     }
 
     fun getApiURL(): String {
@@ -58,15 +114,19 @@ class NodeService(
     }
 
     fun getToken(): String {
-        return "$PAT"
+        return PAT
     }
 
     fun getHttpClient(): HttpClient {
         return if (SKIP_SSL_VERIFICATION) {
             HttpClient(OkHttp) {
+                install(ContentNegotiation) {
+                    json()
+                }
+
                 engine {
                     preconfigured = OkHttpClient.Builder()
-                        // .sslSocketFactory(unsafeSslContext.socketFactory, trustAllCerts)
+                        .sslSocketFactory(unsafeSslContext.socketFactory, trustAllCerts)
                         .hostnameVerifier { _, _ -> true }
                         .addInterceptor(DummyPatInterceptor(USER_AGENT) { getToken() })
                         .build()
@@ -81,23 +141,32 @@ class NodeService(
                         }
                     )
                 }
+                install(ContentNegotiation) {
+                    json()
+                }
             }
         }
     }
 
-
-    // WARNING: dev only. Skip TLS verification during development and test against a local Pydio Server
-    // Trust manager that does not validate any certificates
-    val trustAllCerts = object : X509TrustManager {
-        override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-        override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-    }
-
-    // SSL context that uses the trust manager
-    val unsafeSslContext = SSLContext.getInstance("SSL").apply {
-        init(null, arrayOf(trustAllCerts), java.security.SecureRandom())
-    }
-
-
+//    // WARNING: dev only. Skip TLS verification during development and test against a local Pydio Server
+//    // Trust manager that does not validate any certificates
+//    private val trustAllCerts = UnsecureTrustManager()
+//    // SSL context that uses the trust manager
+//    private val unsafeSslContext = SSLContext.getInstance("TLS").apply {
+//        init(null, arrayOf(trustAllCerts), java.security.SecureRandom())
+//    }
 }
+
+@SuppressLint("CustomX509TrustManager")
+private class UnsecureTrustManager : X509TrustManager {
+    @SuppressLint("TrustAllX509TrustManager")
+    override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+    }
+
+    @SuppressLint("TrustAllX509TrustManager")
+    override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+    }
+
+    override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+}
+

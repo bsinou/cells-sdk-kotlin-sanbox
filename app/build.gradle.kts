@@ -1,12 +1,20 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.compose.compiler)
 }
 
 android {
     namespace = "org.sinou.kotlin.android.sampleapp"
     compileSdk = 35
+
+    buildFeatures {
+        compose = true
+    }
+
+    // See https://developer.android.com/jetpack/androidx/releases/compose-kotlin#kts
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.5.13"
+    }
 
     defaultConfig {
         applicationId = "org.sinou.kotlin.android.sampleapp"
@@ -40,7 +48,7 @@ android {
 }
 
 dependencies {
-    api(project(":sdk-openapi"))
+    // api(project(":sdk-openapi"))
 
     // Android and Jetpack Compose
     // Latest version can be found here: https://developer.android.com/jetpack/compose/bom
@@ -67,6 +75,8 @@ dependencies {
     implementation(libs.koin.androidx.compose)
 
     implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.client.serialization.kotlinx)
     implementation(libs.ktor.client.okhttp)
     implementation(libs.okhttp)
 

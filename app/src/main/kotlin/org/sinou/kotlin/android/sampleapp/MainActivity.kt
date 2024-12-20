@@ -26,13 +26,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
-import kotlinx.coroutines.delay
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
-import org.koin.compose.scope.KoinScope
 
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -61,14 +58,14 @@ private fun ComponentExamplePage() {
         try {
             nodeService.createDummyFile()
         } catch (e: Exception) {
-          Log.e("tag", e.message ?:"NaN")
+            Log.e("tag", e.message ?: "NaN")
         }
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-             .padding(16.dp)
+            .padding(16.dp)
     ) {
         Text(
             text = "Sample Page to test new Material3 components with compose: ${nodeService.getApiURL()}",
