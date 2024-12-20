@@ -19,13 +19,13 @@ android {
     }
 
     buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
+//        release {
+//            isMinifyEnabled = false
+//            proguardFiles(
+//                getDefaultProguardFile("proguard-android-optimize.txt"),
+//                "proguard-rules.pro"
+//            )
+//        }
         debug {
             version
         }
@@ -40,30 +40,35 @@ android {
 }
 
 dependencies {
+    api(project(":sdk-openapi"))
 
     // Android and Jetpack Compose
     // Latest version can be found here: https://developer.android.com/jetpack/compose/bom
-    implementation (platform(libs.compose.bom))
-    implementation (libs.androidx.core.ktx)
-    implementation (libs.material)
-    implementation (libs.androidx.runtime)
-    implementation (libs.androidx.ui)
-    implementation (libs.androidx.ui.util)
-    implementation (libs.androidx.ui.tooling)
-    implementation (libs.androidx.foundation)
-    implementation (libs.androidx.foundation.layout)
-    implementation (libs.androidx.material3)
-    implementation (libs.androidx.navigation.compose)
-    implementation (libs.androidx.material.icons.core)
-    implementation (libs.androidx.material.icons.extended)
+    implementation(platform(libs.compose.bom))
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.material)
+    implementation(libs.androidx.runtime)
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.util)
+    implementation(libs.androidx.ui.tooling)
+    implementation(libs.androidx.foundation)
+    implementation(libs.androidx.foundation.layout)
+    implementation(libs.androidx.material3)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.material.icons.core)
+    implementation(libs.androidx.material.icons.extended)
 
     // Dependency injection with Koin https://insert-koin.io/
     implementation(platform(libs.koin.bom))
-    implementation (libs.koin.core)
-    implementation (libs.koin.android)
-    implementation (libs.koin.androidx.workmanager)
-    implementation (libs.koin.androidx.navigation)
-    implementation (libs.koin.androidx.compose)
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.androidx.workmanager)
+    implementation(libs.koin.androidx.navigation)
+    implementation(libs.koin.androidx.compose)
+
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.okhttp)
 
     // Tests
     testImplementation(libs.junit)

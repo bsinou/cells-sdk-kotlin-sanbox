@@ -1,6 +1,7 @@
 package org.sinou.kotlin.android.sampleapp
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -24,12 +26,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
+import kotlinx.coroutines.delay
+import org.koin.compose.KoinContext
+import org.koin.compose.koinInject
+import org.koin.compose.scope.KoinScope
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ComponentExamplePage()
+            KoinContext {
+                ComponentExamplePage()
+            }
         }
     }
 }
@@ -46,17 +55,29 @@ private fun ComponentExamplePage() {
         )
         .wrapContentWidth(Alignment.CenterHorizontally)
 
+    val nodeService = koinInject<NodeService>()
+
+    LaunchedEffect(key1 = true) {
+        try {
+            nodeService.createDummyFile()
+        } catch (e: Exception) {
+          Log.e("tag", e.message ?:"NaN")
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
              .padding(16.dp)
     ) {
         Text(
-            text = "Sample Page to test new Material3 components with compose",
+            text = "Sample Page to test new Material3 components with compose: ${nodeService.getApiURL()}",
             modifier = itemModifier
         )
         Button(
             onClick = {
+
+
                 Toast
                     .makeText(ctx, "This is a toast", Toast.LENGTH_LONG)
                     .show()
