@@ -17,69 +17,51 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
-const val SERVER_URL = "https://localhost:8080"
+//const val SERVER_URL = "https://localhost:8080"
+const val SERVER_URL = "https://10.0.2.2:8080"
 private const val SKIP_SSL_VERIFICATION = true
 private const val USER_AGENT = "org.sinou.kotlin.android.sampleapp/v0.1.1 CellsAPI/v2"
 private const val PAT =
     "0XmNa4mhWfLhURwFP6_XJVuEDgPDnoa8EKvJB55fY8g.yddonfgcR4oogCzRqIfimzN7dRNk7si3X3TFRL7hYjo"
 
-private val trustAllCerts = UnsecureTrustManager()
 
+//val myServiceApi = NodeServiceApi("$SERVER_URL/a", myHttpClient.engine)
+
+// SSL context that uses the unsecured trust manager
 private val unsafeSslContext by lazy {
     SSLContext.getInstance("TLS").apply {
         init(null, arrayOf<TrustManager>(trustAllCerts), java.security.SecureRandom())
     }
 }
 
-@OptIn(ExperimentalSerializationApi::class)
-val jsonInstance = Json {
-    ignoreUnknownKeys = true
-    isLenient = true
-    encodeDefaults = true
-    coerceInputValues = false
-    explicitNulls = false
-}
-
-private val myHttpClient = HttpClient(OkHttp) {
-    Log.e("myHttpClient", "---- Constructing the client")
-    install(ContentNegotiation) {
-        json(jsonInstance)
-    }
-
-    engine {
-        preconfigured = OkHttpClient.Builder()
-            .sslSocketFactory(unsafeSslContext.socketFactory, trustAllCerts)
-            .hostnameVerifier { _, _ -> true }
-            .addInterceptor(DummyPatInterceptor(USER_AGENT) { PAT })
-            .build()
-    }
-}
-
-//val myServiceApi = NodeServiceApi("$SERVER_URL/a", myHttpClient.engine)
-
 class NodeService(
     private val appContext: Context,
 ) {
-//     val client = getHttpClient()
+
+    private val logTag = "NodeService"
+    private val client = getHttpClient()
 
 //    fun nodeServiceApi(): NodeServiceApi {
-//        return NodeServiceApi(getApiURL(), myHttpClient.engine)
+//        return NodeServiceApi(getApiURL(), client.engine)
 //    }
 
-    suspend fun createDummyFile(): Int {
-
+    suspend fun pingServer(): Int {
         try {
-            val myReq = Request.Builder().url(SERVER_URL)
-            Log.i("CreateDummy", "We have a request: $myReq")
-
-            val response = myHttpClient.get { myReq }
+            val response = getHttpClient().get { Request.Builder().url(SERVER_URL) }
+            return response.status.value
         } catch (e: Exception) {
-            Log.e("CreateDummy", "Even a get causes: ${e.message}")
-            e.printStackTrace()
+            Log.e(logTag, "unexpected error while pinging server at $SERVER_URL: ${e.message}")
+            return 503
         }
+    }
 
-//        Log.i("CreateDummy", "Before calling create")
+    suspend fun createDummyFile(): Int {
+        Log.d(logTag, "Before calling create")
+        return 200
+
 //        try {
+//
+//            val myServiceApi = nodeServiceApi()
 //            val response = myServiceApi.create(
 //                RestCreateRequest(
 //                    listOf(
@@ -106,56 +88,56 @@ class NodeService(
 //            )
 //        )
 //        return response2.status
-        return 200
     }
 
     fun getApiURL(): String {
         return "$SERVER_URL/a"
     }
 
-    fun getToken(): String {
-        return PAT
-    }
-
     fun getHttpClient(): HttpClient {
         return if (SKIP_SSL_VERIFICATION) {
-            HttpClient(OkHttp) {
-                install(ContentNegotiation) {
-                    json()
-                }
-
-                engine {
-                    preconfigured = OkHttpClient.Builder()
-                        .sslSocketFactory(unsafeSslContext.socketFactory, trustAllCerts)
-                        .hostnameVerifier { _, _ -> true }
-                        .addInterceptor(DummyPatInterceptor(USER_AGENT) { getToken() })
-                        .build()
-                }
-            }
+            unsecureHttpClient
         } else {
-            HttpClient(OkHttp) {
-                engine {
-                    addInterceptor(
-                        interceptor = DummyPatInterceptor(USER_AGENT) {
-                            getToken()
-                        }
-                    )
-                }
-                install(ContentNegotiation) {
-                    json()
-                }
-            }
+            basicHttpClient
         }
     }
 
-//    // WARNING: dev only. Skip TLS verification during development and test against a local Pydio Server
-//    // Trust manager that does not validate any certificates
-//    private val trustAllCerts = UnsecureTrustManager()
-//    // SSL context that uses the trust manager
-//    private val unsafeSslContext = SSLContext.getInstance("TLS").apply {
-//        init(null, arrayOf(trustAllCerts), java.security.SecureRandom())
-//    }
+    @OptIn(ExperimentalSerializationApi::class)
+    private val jsonInstance = Json {
+        ignoreUnknownKeys = true
+        isLenient = true
+        encodeDefaults = true
+        coerceInputValues = false
+        explicitNulls = false
+    }
+
+    private val basicHttpClient = HttpClient(OkHttp) {
+        install(ContentNegotiation) {
+            json(jsonInstance)
+        }
+        engine {
+            addInterceptor(interceptor = DummyPatInterceptor(USER_AGENT) { PAT })
+        }
+    }
+
+    // WARNING: dev only. Skip TLS verification during development and test against a local Pydio Server
+    private val unsecureHttpClient = HttpClient(OkHttp) {
+        install(ContentNegotiation) {
+            json(jsonInstance)
+        }
+        engine {
+            preconfigured = OkHttpClient.Builder()
+                .sslSocketFactory(unsafeSslContext.socketFactory, trustAllCerts)
+                .hostnameVerifier { _, _ -> true }
+                .addInterceptor(DummyPatInterceptor(USER_AGENT) { PAT })
+                .build()
+        }
+    }
+
 }
+
+// Trust manager that does not validate any certificates
+private val trustAllCerts = UnsecureTrustManager()
 
 @SuppressLint("CustomX509TrustManager")
 private class UnsecureTrustManager : X509TrustManager {
@@ -169,4 +151,3 @@ private class UnsecureTrustManager : X509TrustManager {
 
     override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
 }
-

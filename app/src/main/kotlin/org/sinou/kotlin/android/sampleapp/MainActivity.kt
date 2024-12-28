@@ -20,12 +20,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.SecureFlagPolicy
+import kotlinx.coroutines.launch
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
 
@@ -53,14 +55,7 @@ private fun ComponentExamplePage() {
         .wrapContentWidth(Alignment.CenterHorizontally)
 
     val nodeService = koinInject<NodeService>()
-
-    LaunchedEffect(key1 = true) {
-        try {
-            nodeService.createDummyFile()
-        } catch (e: Exception) {
-            Log.e("tag", e.message ?: "NaN")
-        }
-    }
+    val scope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -68,20 +63,41 @@ private fun ComponentExamplePage() {
             .padding(16.dp)
     ) {
         Text(
-            text = "Sample Page to test new Material3 components with compose: ${nodeService.getApiURL()}",
+            text = "Simply test Cells API v2 at ${nodeService.getApiURL()}",
             modifier = itemModifier
         )
         Button(
             onClick = {
+                    scope.launch {
+                        val res = nodeService.pingServer()
+                        val msg = if (res==200) {
+                            "Server can be accessed"
+                        }  else "cannot reach server - error $res"
 
-
-                Toast
-                    .makeText(ctx, "This is a toast", Toast.LENGTH_LONG)
-                    .show()
+                        Toast
+                            .makeText(ctx, msg, Toast.LENGTH_LONG)
+                            .show()
+                    }
             },
             modifier = itemModifier
         ) {
-            Text(text = "Show Toast")
+            Text(text = "Ping Server")
+        }
+        Button(
+            onClick = {
+                scope.launch {
+                    val res = nodeService.createDummyFile()
+                    val msg = if (res==200) {
+                        "Created a new dummy file"
+                    }  else "cannot create file: error $res"
+                    Toast
+                        .makeText(ctx, msg, Toast.LENGTH_LONG)
+                        .show()
+                }
+            },
+            modifier = itemModifier
+        ) {
+            Text(text = "Create a dummy empty file")
         }
         Button(
             onClick = { showDialog1.value = true },
