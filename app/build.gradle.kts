@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 android {
@@ -48,7 +49,7 @@ android {
 }
 
 dependencies {
-    // api(project(":sdk-openapi"))
+    api(project(":sdk-openapi"))
 
     // Android and Jetpack Compose
     // Latest version can be found here: https://developer.android.com/jetpack/compose/bom

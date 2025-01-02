@@ -20,5 +20,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Sample App"
-//  include(":sdk-openapi")
+include(":sdk-openapi")
 include(":app")

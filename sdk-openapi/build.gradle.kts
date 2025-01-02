@@ -1,5 +1,26 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+buildscript {
+
+    repositories {
+        maven(url = "https://repo1.maven.org/maven2" )
+        mavenCentral()
+        gradlePluginPortal()
+    }
+
+    dependencies {
+        classpath ("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
+        classpath ("org.jetbrains.kotlin:kotlin-serialization:1.9.23")
+        classpath("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.0")
+        // classpath(libs.kotlinx.serialization)
+    }
+}
+
+
+
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization") version "1.9.23"
     alias(libs.plugins.spotless)
 }
 
@@ -37,4 +58,8 @@ dependencies {
     }
 }
 
-
+tasks.withType<KotlinCompile>().configureEach {
+    kotlinOptions {
+        freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
+    }
+}

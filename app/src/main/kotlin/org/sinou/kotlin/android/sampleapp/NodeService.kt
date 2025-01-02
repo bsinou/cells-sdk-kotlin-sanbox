@@ -12,7 +12,12 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import org.sinou.android.kotlin.openapi.api.NodeServiceApi
+import org.sinou.android.kotlin.openapi.model.RestCreateRequest
+import org.sinou.android.kotlin.openapi.model.RestIncomingNode
+import org.sinou.android.kotlin.openapi.model.RestNodeLocator
 import java.security.cert.X509Certificate
+import java.util.UUID
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
@@ -39,11 +44,12 @@ class NodeService(
 ) {
 
     private val logTag = "NodeService"
-    private val client = getHttpClient()
+//     private val client = getHttpClient()
 
-//    fun nodeServiceApi(): NodeServiceApi {
-//        return NodeServiceApi(getApiURL(), client.engine)
-//    }
+    fun nodeServiceApi(): NodeServiceApi {
+        // return NodeServiceApi(getApiURL(), getHttpClient().engine)
+        return NodeServiceApi(getApiURL(), unsecureHttpClient.engine)
+    }
 
     suspend fun pingServer(): Int {
         try {
@@ -57,24 +63,24 @@ class NodeService(
 
     suspend fun createDummyFile(): Int {
         Log.d(logTag, "Before calling create")
-        return 200
-
-//        try {
-//
-//            val myServiceApi = nodeServiceApi()
-//            val response = myServiceApi.create(
-//                RestCreateRequest(
-//                    listOf(
-//                        RestIncomingNode(
-//                            locator = RestNodeLocator(path = "common-files/test.txt")
-//                        )
-//                    )
-//                )
-//            )
-//        } catch (e: Exception) {
-//            Log.e("CreateDummy", "Et blöaaaa")
-//        }
-//        Log.e("CreateDummy", "After calling create")
+        val id: String = UUID.randomUUID().toString()
+        val newPath = "common-files/test-$id.txt"
+        try {
+            val myServiceApi = nodeServiceApi()
+            val response = myServiceApi.create(
+                RestCreateRequest(
+                    listOf(
+                        RestIncomingNode(
+                            locator = RestNodeLocator(path = newPath)
+                        )
+                    )
+                )
+            )
+            return response.status
+        } catch (e: Exception) {
+            Log.e(logTag, "could not create file at $newPath, cause: ${e.message}")
+            return 503
+        }
 //
 //        val response2 = nodeServiceApi().lookup(
 //            RestLookupRequest(
